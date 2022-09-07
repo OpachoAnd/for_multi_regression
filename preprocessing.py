@@ -4,6 +4,18 @@ import matplotlib.pyplot as plt
 
 data = pd.read_csv(r'C:\Users\opacho\Documents\GitHub\for_multi_regression\source_data\Fish.csv')
 df = pd.DataFrame(data, columns=['Species', 'Length1', 'Length2', 'Length3', 'Height', 'Width', 'Weight'])
+
+
+def preprocessing_dataframe(df):
+    #преобразование текстовых столбцов и удаление строк с пустыми элементами
+    processed_df = df.copy(deep=True)
+    for i in processed_df.columns:
+        if str(processed_df[i].dtype) != 'float64':
+            processed_df[i] = processed_df[i].factorize()[0]
+    processed_df.dropna(inplace=True)
+    return processed_df
+
+
 def data_visualization(df, name_column: str):
     # визуализация распределения данных указанного столбца относительно общего количества элементов в датасете
     plt.figure(figsize=(10, 6))
@@ -23,6 +35,7 @@ def correlation(df, name_target_column: str):
 
 
 def data_logarithm(df):
+    # Логарифмирование датасета для нормализации данных
     df_log = pd.DataFrame()
     for i in df.columns:
         y_log = np.log(df[i])
@@ -32,4 +45,4 @@ def data_logarithm(df):
 
 if __name__ == "__main__":
     #correlation(df, 'Weight')
-    print(data_logarithm(df))
+    print(preprocessing_dataframe(df))
