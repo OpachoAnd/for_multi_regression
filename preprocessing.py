@@ -16,9 +16,20 @@ def data_visualization(df, name_column: str):
 def correlation(df, name_target_column: str):
     # корреляция параметров относительно выходного значения
     # должна стремиться либо к -1, либо к +1, если к 0, то зависимости параметра и выхода нет
-    for i in df.columns[1:-1]:
+    for i in df.columns[:-1]:
         print(f'корреляция столбца {str(i)} относительно выхода {str(name_target_column)}'
               f' равна {df[name_target_column].corr(df[i])}')
+    print(f'\n{df.corr()}')
+
+
+def data_logarithm(df):
+    df_log = pd.DataFrame()
+    for i in df.columns:
+        y_log = np.log(df[i])
+        df_log[i] = y_log
+    return df_log
+
 
 if __name__ == "__main__":
-    correlation(df, 'Weight')
+    #correlation(df, 'Weight')
+    print(data_logarithm(df))
