@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+
+import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 data = pd.read_csv(r'C:\Users\opacho\Documents\GitHub\for_multi_regression\source_data\Fish.csv')
 df = pd.DataFrame(data, columns=['Species', 'Length1', 'Length2', 'Length3', 'Height', 'Width', 'Weight'])
@@ -42,7 +46,15 @@ def data_logarithm(df):
         df_log[i] = y_log
     return df_log
 
+def data_separation(df, name_target_column: str):
+    target_column = df[name_target_column]
+    features = df.drop(name_target_column, axis=1)
+
+    X_train, X_test, y_train, y_test = train_test_split(features, target_column, test_size=0.2)
+    return X_train, X_test, y_train, y_test
 
 if __name__ == "__main__":
     #correlation(df, 'Weight')
-    print(preprocessing_dataframe(df))
+    df = preprocessing_dataframe(df)
+    print(data_separation(df, 'Weight'))
+    #variance_inflation_factor(exog=)
