@@ -11,7 +11,7 @@ df = pd.DataFrame(data, columns=['Species', 'Length1', 'Length2', 'Length3', 'He
 
 
 def preprocessing_dataframe(df):
-    #преобразование текстовых столбцов и удаление строк с пустыми элементами
+    # преобразование текстовых столбцов и удаление строк с пустыми элементами
     processed_df = df.copy(deep=True)
     for i in processed_df.columns:
         if str(processed_df[i].dtype) != 'float64':
@@ -46,6 +46,7 @@ def data_logarithm(df):
         df_log[i] = y_log
     return df_log
 
+
 def data_separation(df, name_target_column: str):
     target_column = df[name_target_column]
     features = df.drop(name_target_column, axis=1)
@@ -53,8 +54,21 @@ def data_separation(df, name_target_column: str):
     X_train, X_test, y_train, y_test = train_test_split(features, target_column, test_size=0.2)
     return X_train, X_test, y_train, y_test
 
+
+def VIF(X_train, threshold=5):
+    # мера зависимости параметров друг от друга, должна быть меньше 5
+    # возвращает df со строками, не прошедшими threshold
+    X_const = sm.add_constant(X_train)
+    vif = [variance_inflation_factor(exog=X_const.values, exog_idx=1) for i in range(X_const.shape[1])]
+    # print(vif)
+    df_vif = pd.DataFrame({'coef_name': X_const.columns, 'vif': np.around(vif, 2)})
+    df_vif_threshold = df_vif.loc[df_vif['vif'] > threshold]
+    return df_vif_threshold
+
+
 if __name__ == "__main__":
-    #correlation(df, 'Weight')
+    # correlation(df, 'Weight')
     df = preprocessing_dataframe(df)
-    print(data_separation(df, 'Weight'))
-    #variance_inflation_factor(exog=)
+    X_train, X_test, y_train, y_test = data_separation(df, 'Weight')
+    (VIF(X_train))
+    # variance_inflation_factor(exog=)
