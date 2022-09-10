@@ -16,6 +16,7 @@ class Zinc_Impurities(object):
         self.model_cu = ''
         self.model_cd = ''
         self.path_out = path_out
+
     def deleting_incorrect_data(self):
         need_rows = self.features[self.features['CHPAC1_B051_LV  --   AT501A'] == 0.0]
         need_rows = need_rows[need_rows['CHPAC1_B052_LV  --   AT501B'] == 0.0]
@@ -142,28 +143,21 @@ class Zinc_Impurities(object):
         self.download_weights()
         predict_cu = self.model_cu.predict(self.features)
         predict_cd = self.model_cd.predict(self.features)
-        #print(self.features_out['Unnamed: 0'])
-        # self.features_out.index = self.features_out['Unnamed: 0']
-        #print(self.features_out.index)
 
         for i, j in zip(self.features_out['Unnamed: 0'], self.features_out.index):
-            # print(f'{i}, {j}')
             if i == 'Дата Время':
                 continue
             index = list(self.indexes).index(i)
 
             p_cu = predict_cu[index]
             p_cd = predict_cd[index]
-
             self.features_out.loc[j, 'Cu - AT502'] = p_cu
             self.features_out.loc[j, 'Cd - AT502'] = p_cd
+
+        self.features_out.drop(labels=['Unnamed: 3', 'Unnamed: 4', ' '], axis=1, inplace=True)
+        self.features_out.columns = ['', 'Cu - AT502', 'Cd - AT502']
         self.features_out.to_excel(self.path_out, index=False)
-            # self.features_out.where(self.features_out['Unnamed: 0'] == i)
-            #
-            # # self.features_out.iloc[i]['Cu - AT502'] = predict_cu[index]
-            # # self.features_out.iloc[i]['Cd - AT502'] = predict_cd[index]
-            # print(i)
-            # print(self.features_out.iloc[i])
+
 
 if __name__ == '__main__':
     zi = Zinc_Impurities(path=r'C:\Users\Андрей\Documents\GitHub\Данные 2018_07 - 2019_06\2019_07 - проверка - входные переменные.xls',
