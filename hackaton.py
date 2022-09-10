@@ -11,6 +11,8 @@ import os
 class Zinc_Impurities(object):
     def __init__(self, path: str):
         self.features = pd.read_excel(path)
+        self.features_2 = ''
+        self.indexes = ''
         self.model_cu = ''
         self.model_cd = ''
 
@@ -118,7 +120,17 @@ class Zinc_Impurities(object):
         result = pd.concat(frames)
         result.index = result['Unnamed: 0']
         result.drop(labels='Unnamed: 0', axis=1, inplace=True)
-        self.features = result
+        self.indexes = result.index
+        self.features = result.values
+
+        self.features = np.array(self.features, dtype=np.float64)
+
+        # Среднее значение np.median(
+        mean = np.mean(self.features, axis=0)  # X_train.mean(axis=0)
+        # # Стандартное отклонение
+        std = np.std(self.features, axis=0)
+        self.features -= mean
+        self.features /= std
 
     def download_weights(self):
         with open(os.path.join(os.getcwd(), 'model_cu.pkl'), 'rb') as fp1:
@@ -126,7 +138,15 @@ class Zinc_Impurities(object):
         with open(os.path.join(os.getcwd(), 'model_cd.pkl'), 'rb') as fp2:
             self.model_cd = pickle.load(fp2)
 
+    def prediction(self):
+        self.download_weights()
+        predict_cu = self.model_cu.predict(self.features)
+        predict_cd = self.model_cd.predict(self.features)
+        
 
 if __name__ == '__main__':
     zi = Zinc_Impurities(path=r'C:\Users\Андрей\Documents\GitHub\Данные 2018_07 - 2019_06\2019_07 - проверка - входные переменные.xls')
+    zi.deleting_incorrect_data()
+    zi.removing_redundant_data()
     zi.download_weights()
+    zi.prediction()
