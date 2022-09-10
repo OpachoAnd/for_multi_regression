@@ -4,14 +4,15 @@ import pandas as pd
 import math
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
+import pickle
+import os
 
 
 class Zinc_Impurities(object):
     def __init__(self, path: str):
-        self.features = pd.read_csv(path)
-        self.target_column = ''
-        self.weight_cu=''
-        self.weight_cd=''
+        self.features = pd.read_excel(path)
+        self.model_cu = ''
+        self.model_cd = ''
 
     def deleting_incorrect_data(self):
         need_rows = self.features[self.features['CHPAC1_B051_LV  --   AT501A'] == 0.0]
@@ -115,8 +116,17 @@ class Zinc_Impurities(object):
         frames = [need_rows_A_A, need_rows_A_B, need_rows_B_A, need_rows_B_B]
 
         result = pd.concat(frames)
-        result.index = result['Unnamed: 0']  # range(0, len(result))
+        result.index = result['Unnamed: 0']
         result.drop(labels='Unnamed: 0', axis=1, inplace=True)
         self.features = result
 
-    def download_
+    def download_weights(self):
+        with open(os.path.join(os.getcwd(), 'model_cu.pkl'), 'rb') as fp1:
+            self.model_cu = pickle.load(fp1)
+        with open(os.path.join(os.getcwd(), 'model_cd.pkl'), 'rb') as fp2:
+            self.model_cd = pickle.load(fp2)
+
+
+if __name__ == '__main__':
+    zi = Zinc_Impurities(path=r'C:\Users\Андрей\Documents\GitHub\Данные 2018_07 - 2019_06\2019_07 - проверка - входные переменные.xls')
+    zi.download_weights()
