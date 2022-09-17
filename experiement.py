@@ -18,18 +18,6 @@ prepare_test_df = Prepare_Df_Test(path_test_df=path_test,
                                   name_target_column_cadmium='Cd_AT502')
 normalization_test_df = Normalization_Df(df=prepare_test_df.selecting_df, test=True)
 normalization_test_df.normalization()
+# TODO исправить Normalization_DF и Prepare_DF чтобы не множить сущности
 print(normalization_test_df.df.shape)
-#
-# prepare_df = Prepare_Df(path=path_test,
-#                         name_target_column_cuprum='Cu_AT502',
-#                         name_target_column_cadmium='Cd_AT502')
-#
-# normalization_df = Normalization_Df(df=prepare_df.df, test=True)
-# normalization_df.normalization()
-# print(normalization_df.offset)
 
-# prepare_df = Prepare_Df_Test(path_test_df=path_test,
-#                              path_time_point=path_out,
-#                              name_target_column_cuprum='Cu_AT502',
-#                              name_target_column_cadmium='Cd_AT502')
-# print(prepare_df.selecting_df)
