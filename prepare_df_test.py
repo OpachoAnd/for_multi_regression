@@ -1,11 +1,5 @@
-import numpy as np
-import os
 import pandas as pd
-import math
-from sklearn.model_selection import train_test_split
-from sklearn import preprocessing
-import pickle
-import os
+
 from prepare_df import Prepare_Df
 
 

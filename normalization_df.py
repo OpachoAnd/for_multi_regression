@@ -1,9 +1,9 @@
+import pickle
+
 import numpy as np
 import pandas as pd
-import redis
-import pickle
-#from experiement import redis_connect
-redis_connect = redis.Redis(host='localhost', port=6379)
+
+from settings import redis_connect
 
 
 class Normalization_Df(object):
@@ -32,7 +32,7 @@ class Normalization_Df(object):
             self.offset = np.mean(self.df, axis=0)
         else:
             self.offset = np.median(self.df, axis=0)
-        #print(type(self.offset))
+
         redis_connect.set('offset', pickle.dumps(self.offset))
 
     def std_calculation(self):
@@ -42,6 +42,7 @@ class Normalization_Df(object):
             Без возвращаемого значения
         """
         self.std = np.std(self.df, axis=0)
+
         redis_connect.set('std', pickle.dumps(self.std))
 
     def normalization(self, mean: bool = True):

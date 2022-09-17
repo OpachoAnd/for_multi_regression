@@ -172,6 +172,7 @@ class Prepare_Df(object):
         if self.test:
             # Если набор данных ТЕСТОВЫЙ, то удаляем строки с пустыми столбцами
             df = df.dropna(how='any', axis=0)
+
         if 'Ti' in df.columns:
             df.index = df['Ti']
             df.drop(labels=['Ti'], axis=1, inplace=True)
