@@ -1,15 +1,14 @@
 import pandas as pd
+from accessify import private
 
 
 class Prepare_Df(object):
-    def __init__(self, path: str, name_target_column_cuprum: str, name_target_column_cadmium: str, test: bool = True):
+    def __init__(self, name_target_column_cuprum: str, name_target_column_cadmium: str):
         """
         Класс для предварительной обработки исходных данных
         Args:
-            path: Путь до обрабатываемых данных
             name_target_column_cuprum: Имя столбца с истинными значениями Меди
             name_target_column_cadmium: Имя столбца с истинными значениями Кадмия
-            test: Тестовый набор данных или нет
         """
         self.name_target_column_Cuprum = name_target_column_cuprum
         self.name_target_column_Cadmium = name_target_column_cadmium
@@ -17,23 +16,33 @@ class Prepare_Df(object):
         self.target_column_Cuprum = None
         self.target_column_Cadmium = None
 
-        self.test = test
-
-        if '.csv' in path:
-            self.df = self.deleting_incorrect_data_1(pd.read_csv(path))
-        elif '.xls' in path:
-            self.df = self.deleting_incorrect_data_1(pd.read_excel(path))
-
-    def deleting_incorrect_data_1(self, df: pd.DataFrame) -> pd.DataFrame:
+    def deleting_incorrect_data_1(self, df: pd.DataFrame, test: bool = True) -> pd.DataFrame:
         """
         Метод для удаления некорректных данных
         Args:
-            df: датафрейм с данными
+            test: Тестовый набор данных или нет
+            df: Датафрейм с данными
 
         Returns:
             Обработанный датафрейм
         """
         df = df.copy(deep=True)
+        df = df[(df['Cu_AT501_A'] > 1) &
+                (df['Cd_AT501_A'] > 1) &
+                (df['Zn_AT501_A'] > 1) &
+
+                (df['Cu_AT501_B'] > 1) &
+                (df['Cd_AT501_B'] > 1) &
+                (df['Zn_AT501_B'] > 1) &
+
+                (df['Cu_AT502_A'] > 1) &
+                (df['Cd_AT502_A'] > 1) &
+                (df['Zn_AT502_A'] > 1) &
+
+                (df['Cu_AT502_B'] > 1) &
+                (df['Cd_AT502_B'] > 1) &
+                (df['Zn_AT502_B'] > 1)
+                ]
         need_rows = df[df['A_bool_1'] == 0.0]
         need_rows = need_rows[need_rows['B_bool_1'] == 0.0]
         df.drop(labels=need_rows.index, axis=0, inplace=True)
@@ -51,9 +60,10 @@ class Prepare_Df(object):
         df.drop(labels=need_rows.index, axis=0, inplace=True)
 
         df = self.removing_redundant_data_2(df=df)
-        df = self.deleting_an_output_3(df=df)
+        df = self.deleting_an_output_3(df=df, test=test)
         return df
 
+    @private
     def removing_redundant_data_2(self, df) -> pd.DataFrame:
         """
         Удаление избыточных данных
@@ -148,10 +158,12 @@ class Prepare_Df(object):
         df = result
         return df
 
-    def deleting_an_output_3(self, df: pd.DataFrame) -> pd.DataFrame:
+    @private
+    def deleting_an_output_3(self, df: pd.DataFrame, test: bool) -> pd.DataFrame:
         """
         Удаление лишних выходных столбцов
         Args:
+            test: Тестовый набор данных или нет
             df: Датафрейм с данными
 
         Returns:
@@ -160,7 +172,7 @@ class Prepare_Df(object):
 
         df = df.copy(deep=True)
 
-        if not self.test:
+        if not test:
             # Если набор данных ТРЕНИРОВОЧНЫЙ, то удаляем строки с пустыми столбцами
             df = df.dropna(how='any', axis=0)
 
@@ -169,7 +181,7 @@ class Prepare_Df(object):
 
         df = df.drop(labels=['Cu_AT502', 'Cd_AT502', 'Zn_AT502'], axis=1)
 
-        if self.test:
+        if test:
             # Если набор данных ТЕСТОВЫЙ, то удаляем строки с пустыми столбцами
             df = df.dropna(how='any', axis=0)
 

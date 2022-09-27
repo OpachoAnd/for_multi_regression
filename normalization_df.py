@@ -34,10 +34,11 @@ class Normalization_Df(object):
             self.offset = np.mean(df, axis=0)
         else:
             self.offset = np.median(df, axis=0)
-
         self.std = np.std(df, axis=0)
-        self.redis_connection.set('offset', pickle.dumps(self.offset))
-        self.redis_connection.set('std', pickle.dumps(self.std))
+
+        if self.redis_connection.ping():
+            self.redis_connection.set('offset', pickle.dumps(self.offset))
+            self.redis_connection.set('std', pickle.dumps(self.std))
 
     def normalization(self, df: pd.DataFrame, mean_or_median: bool = True, test: bool = True):
         """
@@ -47,7 +48,7 @@ class Normalization_Df(object):
             test: Тестовые данные или нет
             mean_or_median: Если True, то подсчет Среднего по каждому столбцу, иначе Медианы
         Returns:
-            Без возвращаемого значения
+            Нормализованный набор данных
         """
 
         if not test:
@@ -62,6 +63,8 @@ class Normalization_Df(object):
         else:
             # TODO обработка отсутствия значений в Редис
             pass
+
         # Нормализация
-        self.df -= self.offset
-        self.df /= self.std
+        df -= self.offset
+        df /= self.std
+        return df
