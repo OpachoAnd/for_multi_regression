@@ -37,3 +37,4 @@ fonttools~=4.37.1
 kiwisolver~=1.4.4
 scikit-learn~=1.1.2
 redis~=4.3.4
+accessify~=0.3.1
