@@ -2,66 +2,63 @@ import pickle
 
 import numpy as np
 import pandas as pd
-
-from settings import redis_connect
+import redis
+from accessify import private
 
 
 class Normalization_Df(object):
-    def __init__(self, df: pd.DataFrame, test: bool = True):
+    def __init__(self, redis_connection: redis.client.Redis):
         """
         Класс для нормализации входных данных
         Args:
-            df: Датафрейм с входными данными
-            test: Тестовые данные или нет
+            redis_connection: Подключение к хранилищу Redis
         """
+
+        self.redis_connection = redis_connection
         self.offset = None
         self.std = None
-        self.test = test
-        self.df = df.values
 
-    def offset_calculation(self, mean: bool):
+    @private
+    def offset_std_calculation(self, df: pd.DataFrame, mean_or_median: bool):
         """
         Подчсет смещения данных, то есть среднего (медианы) по каждому столбцу
         Args:
-            mean: Если True, то подсчет Среднего по каждому столбцу, иначе Медианы
+            df: Датафрейм с тестовыми/тренировочными данными
+            mean_or_median: Если True, то подсчет Среднего по каждому столбцу, иначе Медианы
 
         Returns:
             Без возвращаемого значения
         """
-        if mean:
-            self.offset = np.mean(self.df, axis=0)
+
+        if mean_or_median:
+            self.offset = np.mean(df, axis=0)
         else:
-            self.offset = np.median(self.df, axis=0)
+            self.offset = np.median(df, axis=0)
 
-        redis_connect.set('offset', pickle.dumps(self.offset))
+        self.std = np.std(df, axis=0)
+        self.redis_connection.set('offset', pickle.dumps(self.offset))
+        self.redis_connection.set('std', pickle.dumps(self.std))
 
-    def std_calculation(self):
-        """
-        Подсчет стандартного отклонения данных
-        Returns:
-            Без возвращаемого значения
-        """
-        self.std = np.std(self.df, axis=0)
-
-        redis_connect.set('std', pickle.dumps(self.std))
-
-    def normalization(self, mean: bool = True):
+    def normalization(self, df: pd.DataFrame, mean_or_median: bool = True, test: bool = True):
         """
         Нормализация входных данных с использованием смещения и стандартного отклонения
         Args:
-            mean: Если True, то подсчет Среднего по каждому столбцу, иначе Медианы
-
+            df:
+            test: Тестовые данные или нет
+            mean_or_median: Если True, то подсчет Среднего по каждому столбцу, иначе Медианы
         Returns:
             Без возвращаемого значения
         """
-        if not self.test:
+
+        if not test:
             # Подсчет смещения и стандартного отклонения
-            self.offset_calculation(mean=mean)
-            self.std_calculation()
-        elif redis_connect.exists('offset', 'std') == 2:
+            self.offset_std_calculation(df=df, mean_or_median=mean_or_median)
+
+        elif self.redis_connection.exists('offset', 'std') == 2:
             # Если число существующих ключей равно 2
-            self.offset = pickle.loads(redis_connect.get('offset'))
-            self.std = pickle.loads(redis_connect.get('std'))
+            self.offset = pickle.loads(self.redis_connection.get('offset'))
+            self.std = pickle.loads(self.redis_connection.get('std'))
+
         else:
             # TODO обработка отсутствия значений в Редис
             pass
