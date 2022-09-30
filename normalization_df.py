@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import redis
-from accessify import private
+from accessify import protected, private
 
 
 class Normalization_Df(object):
@@ -18,7 +18,6 @@ class Normalization_Df(object):
         self.offset = None
         self.std = None
 
-    @private
     def offset_std_calculation(self, df: pd.DataFrame, mean_or_median: bool):
         """
         Подчсет смещения данных, то есть среднего (медианы) по каждому столбцу
@@ -36,10 +35,14 @@ class Normalization_Df(object):
             self.offset = np.median(df, axis=0)
         self.std = np.std(df, axis=0)
 
-        if self.redis_connection.ping():
+        try:
             self.redis_connection.set('offset', pickle.dumps(self.offset))
             self.redis_connection.set('std', pickle.dumps(self.std))
+        except redis.ConnectionError:
+            # TODO ЗАМЕНИТЬ НА ЛОГИРОВАНИЕ
+            print('Connection Redis ERROR')
 
+    @protected
     def normalization(self, df: pd.DataFrame, mean_or_median: bool = True, test: bool = True):
         """
         Нормализация входных данных с использованием смещения и стандартного отклонения

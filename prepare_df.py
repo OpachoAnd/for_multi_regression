@@ -10,6 +10,7 @@ class Prepare_Df(object):
             name_target_column_cuprum: Имя столбца с истинными значениями Меди
             name_target_column_cadmium: Имя столбца с истинными значениями Кадмия
         """
+        self.target_columns_Cu_Cd = None
         self.name_target_column_Cuprum = name_target_column_cuprum
         self.name_target_column_Cadmium = name_target_column_cadmium
 
@@ -176,8 +177,11 @@ class Prepare_Df(object):
             # Если набор данных ТРЕНИРОВОЧНЫЙ, то удаляем строки с пустыми столбцами
             df = df.dropna(how='any', axis=0)
 
-        self.target_column_Cuprum = df[self.name_target_column_Cuprum].copy(deep=True)  # 'Cu_AT502']
-        self.target_column_Cadmium = df[self.name_target_column_Cadmium].copy(deep=True)
+        # self.target_column_Cuprum = df[self.name_target_column_Cuprum].copy(deep=True)  # 'Cu_AT502']
+        # self.target_column_Cadmium = df[self.name_target_column_Cadmium].copy(deep=True)
+        self.target_columns_Cu_Cd = pd.concat([df[self.name_target_column_Cuprum].copy(deep=True),
+                                              df[self.name_target_column_Cadmium].copy(deep=True)],
+                                              axis=1)
 
         df = df.drop(labels=['Cu_AT502', 'Cd_AT502', 'Zn_AT502'], axis=1)
 
