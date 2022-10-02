@@ -31,16 +31,14 @@ class Train_Model(Normalization_Df):
         train_df.reset_index(drop=True, inplace=True)
         target_columns_cu_cd.reset_index(drop=True, inplace=True)
 
+        labels_without_anomalies = self.anomaly_detection(df=train_df)
 
+        train_df = train_df.loc[labels_without_anomalies]
+        target_columns_cu_cd = target_columns_cu_cd.loc[labels_without_anomalies]
 
-        # X_train, X_test, y_train, y_test = train_test_split(train_df, target_columns_cu_cd['Cu_AT502'], test_size=0.2)
-        # model_cu_cd = tree.DecisionTreeRegressor(criterion='friedman_mse',
-        #                                          max_features='auto',
-        #                                          random_state=1
-        #                                          )
-        # model_cu_cd.fit(X_train, y_train)
-        # score = model_cu_cd.score(X_test, y_test)
-        # print(score)
+        train_df.reset_index(drop=True, inplace=True)
+        target_columns_cu_cd.reset_index(drop=True, inplace=True)
+
 
         # Кросс-валидация:
         trees = {}
@@ -72,6 +70,8 @@ class Train_Model(Normalization_Df):
 
     def train_gradient_boost(self):
         pass
+
+
 
     # def predict(self, test_df: pd.DataFrame):
     #     """

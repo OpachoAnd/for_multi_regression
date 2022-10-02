@@ -3,7 +3,8 @@ import pickle
 import numpy as np
 import pandas as pd
 import redis
-from accessify import protected, private
+from accessify import protected
+from sklearn.cluster import DBSCAN
 
 
 class Normalization_Df(object):
@@ -71,3 +72,18 @@ class Normalization_Df(object):
         df -= self.offset
         df /= self.std
         return df
+
+    @protected
+    def anomaly_detection(self, df: pd.DataFrame):
+        """
+        Метод получения индексов точек, относящихся к "аномалиям" (выбросам)
+        Args:
+            df: Набор данных для поиска аномалий
+
+        Returns:
+            Список индексов точек, являющихся аномалиями, т.е. выбросами
+        """
+        outlier_detection = DBSCAN(min_samples=2, eps=3)
+        # Кластеризация данных, если кластер является -1, то это "шум"
+        clusters = outlier_detection.fit_predict(df)
+        return np.where(clusters != -1)
