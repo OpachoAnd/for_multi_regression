@@ -74,9 +74,9 @@ class Normalization_Df(object):
         return df
 
     @protected
-    def anomaly_detection(self, df: pd.DataFrame):
+    def anomaly_detection_DBSCAN(self, df: pd.DataFrame):
         """
-        Метод получения индексов точек, относящихся к "аномалиям" (выбросам)
+        Метод получения индексов точек, относящихся к "аномалиям" (выбросам) с помощью кластеризации DBScan
         Args:
             df: Набор данных для поиска аномалий
 
@@ -87,3 +87,37 @@ class Normalization_Df(object):
         # Кластеризация данных, если кластер является -1, то это "шум"
         clusters = outlier_detection.fit_predict(df)
         return np.where(clusters != -1)
+
+    @protected
+    def anomaly_detection_STD(self, df: pd.DataFrame):
+        """
+        Метод получения индексов точек, относящихся к "аномалиям" (выбросам) с помощью стандартного отклонения
+        Args:
+            df: Набор данных для поиска аномалий
+
+        Returns:
+            Список индексов точек, являющихся аномалиями, т.е. выбросами
+        """
+        anomalies = []
+        for i in df.columns:
+            std = np.std(df[i])
+            mean = np.mean(df[i])
+
+            anomaly_cut_off = std * 3
+
+            lower_limit = mean - anomaly_cut_off
+            upper_limit = mean + anomaly_cut_off
+
+            df_copy = pd.DataFrame(df[i].copy(deep=True))
+            df_copy = (df_copy[(df_copy[i] > upper_limit) | (df_copy[i] < lower_limit)]).index
+
+            anomalies.append(pd.DataFrame(df_copy))
+
+        anomalies = pd.concat(anomalies)
+        anomalies = df.index.isin(list(anomalies[0]))
+        # Побитовое отрицание
+        return ~anomalies
+
+
+
+

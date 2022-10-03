@@ -27,18 +27,27 @@ class Train_Model(Normalization_Df):
                                       mean_or_median=True,
                                       test=False
                                       )
-
+        # Обновление индексов в датафреймах train и target
         train_df.reset_index(drop=True, inplace=True)
         target_columns_cu_cd.reset_index(drop=True, inplace=True)
 
-        labels_without_anomalies = self.anomaly_detection(df=train_df)
+        # Метки выбросов, определенных с помощью DBScan
+        labels_without_anomalies_DBScan = self.anomaly_detection_DBSCAN(df=train_df)
+        train_df = train_df.loc[labels_without_anomalies_DBScan]
+        target_columns_cu_cd = target_columns_cu_cd.loc[labels_without_anomalies_DBScan]
 
-        train_df = train_df.loc[labels_without_anomalies]
-        target_columns_cu_cd = target_columns_cu_cd.loc[labels_without_anomalies]
-
+        # Обновление индексов в датафреймах train и target
         train_df.reset_index(drop=True, inplace=True)
         target_columns_cu_cd.reset_index(drop=True, inplace=True)
 
+        # Метки выбросов, определенных с помощью STD
+        labels_without_anomalies_STD = self.anomaly_detection_STD(df=train_df)
+        train_df = train_df.loc[labels_without_anomalies_STD]
+        target_columns_cu_cd = target_columns_cu_cd.loc[labels_without_anomalies_STD]
+
+        # Обновление индексов в датафреймах train и target
+        train_df.reset_index(drop=True, inplace=True)
+        target_columns_cu_cd.reset_index(drop=True, inplace=True)
 
         # Кросс-валидация:
         trees = {}
@@ -53,7 +62,7 @@ class Train_Model(Normalization_Df):
             score = model_cu_cd.score(train_df.loc[test], target_columns_cu_cd.loc[test])
             trees[score] = model_cu_cd
 
-            # print(score)
+            print(score)
 
             # q = model_cu_cd.predict(train_df.values[test])
             # for i in range(len(q)):
