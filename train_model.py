@@ -1,9 +1,11 @@
 import pickle
 
+import numpy as np
 import pandas as pd
 import redis
 from sklearn import tree
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.metrics import mean_absolute_error
+from sklearn.model_selection import KFold
 
 from normalization_df import Normalization_Df
 
@@ -13,6 +15,7 @@ class Train_Model(Normalization_Df):
         super().__init__(redis_connection=redis_connection)
 
         self.model_Cu_Cd = None
+        self.model_trees_grad_boosting = []
 
     def train(self, df: pd.DataFrame, target_columns_cu_cd: pd.DataFrame):
         """
@@ -77,9 +80,46 @@ class Train_Model(Normalization_Df):
             # TODO ЗАМЕНИТЬ НА ЛОГИРОВАНИЕ
             print('Connection Redis ERROR')
 
-    def train_gradient_boost(self):
-        pass
+    def train_gradient_boost(self,
+                             df: pd.DataFrame,
+                             target_columns_cu_cd: pd.DataFrame,
+                             nu: float = 0.1,
+                             n: int = 10):
+        train_columns = ['P510_expense', 'Cu_AT501', 'Cd_AT501', 'Zn_AT501', 'temp', 'pH', 'auto_W503']
+        df = df.copy(deep=True)
 
+        model_pred = tree.DecisionTreeRegressor(criterion='friedman_mse',
+                                                max_features='auto',
+                                                random_state=1
+                                                )
+        model_pred.fit(df, target_columns_cu_cd)
+        self.model_trees_grad_boosting.append(model_pred)
+
+        predict = model_pred.predict(X=df)
+        predict = np.transpose(predict, axes=[1, 0])
+
+        df['y_pred_Cu_AT502'] = predict[0]
+        df['y_pred_Cd_AT502'] = predict[1]
+
+        for i in range(n):
+            df['residual_Cu_AT502'] = target_columns_cu_cd['Cu_AT502'] - df['y_pred_Cu_AT502']
+            df['residual_Cd_AT502'] = target_columns_cu_cd['Cd_AT502'] - df['y_pred_Cd_AT502']
+
+            targets = pd.concat([df['residual_Cu_AT502'], df['residual_Cd_AT502']], axis=1)
+            tree_Cu_Cd_AT502 = tree.DecisionTreeRegressor(criterion='friedman_mse', max_features='auto', random_state=1)
+            tree_Cu_Cd_AT502.fit(df[train_columns], targets)
+
+            predict_residual = tree_Cu_Cd_AT502.predict(df[train_columns])
+            df['y_pred_Cu_AT502'] += nu * np.transpose(predict_residual, axes=[1, 0])[0]
+            df['y_pred_Cd_AT502'] += nu * np.transpose(predict_residual, axes=[1, 0])[1]
+
+            self.model_trees_grad_boosting.append(tree_Cu_Cd_AT502)
+
+        try:
+            self.redis_connection.set('model_gradient_boost', pickle.dumps(self.model_trees_grad_boosting))
+        except redis.ConnectionError:
+            # TODO ЗАМЕНИТЬ НА ЛОГИРОВАНИЕ
+            print('Connection Redis ERROR')
 
 
     # def predict(self, test_df: pd.DataFrame):
