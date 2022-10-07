@@ -3,8 +3,8 @@ import pickle
 import numpy as np
 import pandas as pd
 import redis
+from accessify import private
 from sklearn import tree
-from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import KFold
 
 from normalization_df import Normalization_Df
@@ -17,19 +17,19 @@ class Train_Model(Normalization_Df):
         self.model_Cu_Cd = None
         self.model_trees_grad_boosting = []
 
-    def train(self, df: pd.DataFrame, target_columns_cu_cd: pd.DataFrame):
+    @private
+    def clean_data(self, df: pd.DataFrame, target_columns_cu_cd: pd.DataFrame):
         """
-        Метод для обучения модели "Решающее дерево регрессии"
+        Метод, выполняющий комплексную очистку данных от шума
         Args:
-            df: Набор данных для загрузки в модель (Обучающие данные)
-            target_columns_cu_cd: Два столбца с истинными данными для меди и кадмия
+            df: Датафрейм для очистки
+            target_columns_cu_cd: Метки этого датафрейма
+
         Returns:
-            Нет возвращаемого значения
+            Очищенные df и target_columns_cu_cd
         """
-        train_df = self.normalization(df=df,
-                                      mean_or_median=True,
-                                      test=False
-                                      )
+        train_df = self.normalization(df=df, mean_or_median=True, test=False)
+
         # Обновление индексов в датафреймах train и target
         train_df.reset_index(drop=True, inplace=True)
         target_columns_cu_cd.reset_index(drop=True, inplace=True)
@@ -52,6 +52,19 @@ class Train_Model(Normalization_Df):
         train_df.reset_index(drop=True, inplace=True)
         target_columns_cu_cd.reset_index(drop=True, inplace=True)
 
+        return train_df, target_columns_cu_cd
+
+    def train(self, df: pd.DataFrame, target_columns_cu_cd: pd.DataFrame):
+        """
+        Метод для обучения модели "Решающее дерево регрессии"
+        Args:
+            df: Набор данных для загрузки в модель (Обучающие данные)
+            target_columns_cu_cd: Два столбца с истинными данными для меди и кадмия
+        Returns:
+            Нет возвращаемого значения
+        """
+        train_df, target_columns_cu_cd = self.clean_data(df, target_columns_cu_cd)
+
         # Кросс-валидация:
         trees = {}
         k_fold = KFold(n_splits=5, shuffle=True)
@@ -64,8 +77,6 @@ class Train_Model(Normalization_Df):
             model_cu_cd.fit(train_df.loc[train], target_columns_cu_cd.loc[train])
             score = model_cu_cd.score(train_df.loc[test], target_columns_cu_cd.loc[test])
             trees[score] = model_cu_cd
-
-            print(score)
 
             # q = model_cu_cd.predict(train_df.values[test])
             # for i in range(len(q)):
@@ -85,8 +96,21 @@ class Train_Model(Normalization_Df):
                              target_columns_cu_cd: pd.DataFrame,
                              nu: float = 0.1,
                              n: int = 10):
+        """
+        Метод для обучения моделей "Решающее дерево регрессии" с применением метода "Градиентный бустинг"
+        Args:
+            df: Набор данных для загрузки в модель (Обучающие данные)
+            target_columns_cu_cd: Два столбца с истинными данными для меди и кадмия
+            nu: Скорость уменьшения ошибки
+            n: Число деревьев для градиентного бустинга
+        Returns:
+            Нет возвращаемого значения
+        """
+
         train_columns = ['P510_expense', 'Cu_AT501', 'Cd_AT501', 'Zn_AT501', 'temp', 'pH', 'auto_W503']
         df = df.copy(deep=True)
+
+        df, target_columns_cu_cd = self.clean_data(df, target_columns_cu_cd)
 
         model_pred = tree.DecisionTreeRegressor(criterion='friedman_mse',
                                                 max_features='auto',
@@ -121,23 +145,44 @@ class Train_Model(Normalization_Df):
             # TODO ЗАМЕНИТЬ НА ЛОГИРОВАНИЕ
             print('Connection Redis ERROR')
 
+    def predict(self, test_df: pd.DataFrame, gradient_boosting: bool = False, nu: float = 0.1):
+        """
+        Метод для тестирования модели
+        Args:
+            test_df: Набор данных для тестирования
+            nu: Скорость уменьшения ошибки
+            gradient_boosting: Если True, то применяется метод градиентного бустинга для предсказания
 
-    # def predict(self, test_df: pd.DataFrame):
-    #     """
-    #     Метод для тестирования модели
-    #     Args:
-    #         test_df: Набор данных для тестирования
-    #
-    #     Returns:
-    #         Модель, выдающая предсказание для Меди и Кадмия, либо None в случае её отсутствия
-    #     """
-    #     if self.model_Cu_Cd:
-    #         return self.model_Cu_Cd.predict(test_df)
-    #
-    #     try:
-    #         self.redis_connection.exists('model_Cu_Cd')
-    #         self.model_Cu_Cd = pickle.loads(self.redis_connection.get('model_Cu_Cd'))
-    #         return self.model_Cu_Cd.predict(test_df)
-    #     except redis.ConnectionError:
-    #         print('Connection Redis ERROR')
-    #         return None
+        Returns:
+            Модель, выдающая предсказание для Меди и Кадмия, либо None в случае её отсутствия
+        """
+        test_df = self.normalization(df=test_df, mean_or_median=True, test=False)
+        test_df.reset_index(drop=True, inplace=True)
+
+        if not gradient_boosting and self.model_Cu_Cd:
+            return self.model_Cu_Cd.predict(test_df)
+
+        elif gradient_boosting and self.model_trees_grad_boosting:
+            test_pred = self.model_trees_grad_boosting[0].predict(test_df)
+            for i in self.model_trees_grad_boosting[1::]:
+                test_pred += nu * i.predict(test_df)
+            return test_pred
+
+        try:
+            if not gradient_boosting:
+                self.redis_connection.exists('model_Cu_Cd')
+                self.model_Cu_Cd = pickle.loads(self.redis_connection.get('model_Cu_Cd'))
+
+                return self.model_Cu_Cd.predict(test_df)
+            else:
+                self.redis_connection.exists('model_gradient_boost')
+                self.model_trees_grad_boosting = pickle.loads(self.redis_connection.get('model_gradient_boost'))
+
+                test_pred = self.model_trees_grad_boosting[0].predict(test_df)
+                for i in self.model_trees_grad_boosting[1::]:
+                    test_pred += nu * i.predict(test_df)
+
+                return test_pred
+        except redis.ConnectionError:
+            print('Connection Redis ERROR')
+            return None
