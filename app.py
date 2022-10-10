@@ -5,6 +5,7 @@ from tkinter import *
 from tkinter import ttk
 
 import pandas as pd
+from accessify import private, protected
 
 from prepare_df import Prepare_Df
 from settings import REDIS_CONNECTION
@@ -13,6 +14,13 @@ from train_model import Train_Model
 
 class User_Interface(tk.Frame):
     def __init__(self, prepare_dataframe: Prepare_Df, train_models: Train_Model, window=None):
+        """
+        Класс для пользовательского интерфейса
+        Args:
+            prepare_dataframe: Объект класса для предобработки данных
+            train_models: Объект класса для обучения модели
+            window: Контейнер пользовательского интерфейса
+        """
         super().__init__()
         self.window = window
         self.train_model = train_models
@@ -28,6 +36,11 @@ class User_Interface(tk.Frame):
         self.window.mainloop()
 
     def choose_file(self):
+        """
+        Метод всплывающего окна выбора файла для предсказания
+        Returns:
+            Без возвращаемого значения
+        """
         filetypes = (("Таблица", "*csv *.xlsx *.xls"),
                      ("Любой", "*"))
         directory = fd.askopenfilename(title="Выбрать файл",
@@ -37,11 +50,21 @@ class User_Interface(tk.Frame):
             self.text_enter_data.insert(0, directory)
 
     def choose_directory(self):
+        """
+        Метод всплывающего окна выбора папки для сохранения результатов предсказания
+        Returns:
+            Без возвращаемого значения
+        """
         directory = fd.askdirectory(title="Открыть папку", initialdir=os.getcwd())
         if directory:
             self.text_path_save_data.insert(0, directory)
 
     def ok(self):
+        """
+        Метод для запуска системы
+        Returns:
+            Без возвращаемого значения
+        """
         path_data = self.text_enter_data.get()
         train_test_listbox = self.train_test_listbox.get()
         path_test_answer = self.text_path_save_data.get()
@@ -90,7 +113,7 @@ class User_Interface(tk.Frame):
         line_frame.grid(row=0, column=0, columnspan=2)
 
         lbl_enter_data = Label(line_frame,
-                               text="Путь до файла с данными для анализа:",
+                               text="Путь до файла с данными для предсказания:",
                                foreground="black",
                                background="white"
                                )
@@ -164,7 +187,6 @@ class User_Interface(tk.Frame):
 if __name__ == '__main__':
     prepare = Prepare_Df(name_target_column_cuprum='Cu_AT502', name_target_column_cadmium='Cd_AT502')
     train_model = Train_Model(redis_connection=REDIS_CONNECTION)
-
     window = tk.Tk()
-    ui = User_Interface(window=window, prepare_dataframe=prepare, train_models=train_model)
 
+    ui = User_Interface(window=window, prepare_dataframe=prepare, train_models=train_model)
