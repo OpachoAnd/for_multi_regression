@@ -1,3 +1,4 @@
+import logging
 import pickle
 
 import numpy as np
@@ -5,7 +6,6 @@ import pandas as pd
 import redis
 from accessify import protected
 from sklearn.cluster import DBSCAN
-import logging
 
 
 class Normalization_Df(object):
@@ -116,7 +116,3 @@ class Normalization_Df(object):
         anomalies = df.index.isin(list(anomalies[0]))
         # Побитовое отрицание
         return ~anomalies
-
-
-
-

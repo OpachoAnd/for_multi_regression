@@ -6,7 +6,6 @@ from tkinter import *
 from tkinter import ttk
 
 import pandas as pd
-from accessify import private, protected
 
 from prepare_df import Prepare_Df
 from settings import REDIS_CONNECTION
