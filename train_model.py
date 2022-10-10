@@ -18,35 +18,37 @@ class Train_Model(Normalization_Df):
         self.model_trees_grad_boosting = []
 
     @private
-    def clean_data(self, df: pd.DataFrame, target_columns_cu_cd: pd.DataFrame):
+    def clean_data(self, df: pd.DataFrame, target_columns_cu_cd: pd.DataFrame, removing_anomalies: bool):
         """
         Метод, выполняющий комплексную очистку данных от шума
         Args:
             df: Датафрейм для очистки
             target_columns_cu_cd: Метки этого датафрейма
-
+            removing_anomalies: Если true, то чистка от выбросов в данных
         Returns:
             Очищенные df и target_columns_cu_cd
         """
         train_df = self.normalization(df=df, mean_or_median=True, test=False)
+        target_columns_cu_cd = target_columns_cu_cd
 
-        # Обновление индексов в датафреймах train и target
-        train_df.reset_index(drop=True, inplace=True)
-        target_columns_cu_cd.reset_index(drop=True, inplace=True)
+        if removing_anomalies:
+            # Обновление индексов в датафреймах train и target
+            train_df.reset_index(drop=True, inplace=True)
+            target_columns_cu_cd.reset_index(drop=True, inplace=True)
 
-        # Метки выбросов, определенных с помощью DBScan
-        labels_without_anomalies_DBScan = self.anomaly_detection_DBSCAN(df=train_df)
-        train_df = train_df.loc[labels_without_anomalies_DBScan]
-        target_columns_cu_cd = target_columns_cu_cd.loc[labels_without_anomalies_DBScan]
+            # Метки выбросов, определенных с помощью DBScan
+            labels_without_anomalies_DBScan = self.anomaly_detection_DBSCAN(df=train_df)
+            train_df = train_df.loc[labels_without_anomalies_DBScan]
+            target_columns_cu_cd = target_columns_cu_cd.loc[labels_without_anomalies_DBScan]
 
-        # Обновление индексов в датафреймах train и target
-        train_df.reset_index(drop=True, inplace=True)
-        target_columns_cu_cd.reset_index(drop=True, inplace=True)
+            # Обновление индексов в датафреймах train и target
+            train_df.reset_index(drop=True, inplace=True)
+            target_columns_cu_cd.reset_index(drop=True, inplace=True)
 
-        # Метки выбросов, определенных с помощью STD
-        labels_without_anomalies_STD = self.anomaly_detection_STD(df=train_df)
-        train_df = train_df.loc[labels_without_anomalies_STD]
-        target_columns_cu_cd = target_columns_cu_cd.loc[labels_without_anomalies_STD]
+            # Метки выбросов, определенных с помощью STD
+            labels_without_anomalies_STD = self.anomaly_detection_STD(df=train_df)
+            train_df = train_df.loc[labels_without_anomalies_STD]
+            target_columns_cu_cd = target_columns_cu_cd.loc[labels_without_anomalies_STD]
 
         # Обновление индексов в датафреймах train и target
         train_df.reset_index(drop=True, inplace=True)
@@ -54,16 +56,17 @@ class Train_Model(Normalization_Df):
 
         return train_df, target_columns_cu_cd
 
-    def train(self, df: pd.DataFrame, target_columns_cu_cd: pd.DataFrame):
+    def train(self, df: pd.DataFrame, target_columns_cu_cd: pd.DataFrame, removing_anomalies: bool = True):
         """
         Метод для обучения модели "Решающее дерево регрессии"
         Args:
             df: Набор данных для загрузки в модель (Обучающие данные)
             target_columns_cu_cd: Два столбца с истинными данными для меди и кадмия
+            removing_anomalies: Если true, то чистка от выбросов в данных
         Returns:
             Нет возвращаемого значения
         """
-        train_df, target_columns_cu_cd = self.clean_data(df, target_columns_cu_cd)
+        train_df, target_columns_cu_cd = self.clean_data(df, target_columns_cu_cd, removing_anomalies)
 
         # Кросс-валидация:
         trees = {}
@@ -78,10 +81,6 @@ class Train_Model(Normalization_Df):
             score = model_cu_cd.score(train_df.loc[test], target_columns_cu_cd.loc[test])
             trees[score] = model_cu_cd
 
-            # q = model_cu_cd.predict(train_df.values[test])
-            # for i in range(len(q)):
-            #     print(q[i], target_columns_cu_cd.values[test][i])
-
         self.model_Cu_Cd = trees[max(trees.keys())]
 
         try:
@@ -94,6 +93,7 @@ class Train_Model(Normalization_Df):
     def train_gradient_boost(self,
                              df: pd.DataFrame,
                              target_columns_cu_cd: pd.DataFrame,
+                             removing_anomalies: bool = True,
                              nu: float = 0.1,
                              n: int = 10):
         """
@@ -101,6 +101,7 @@ class Train_Model(Normalization_Df):
         Args:
             df: Набор данных для загрузки в модель (Обучающие данные)
             target_columns_cu_cd: Два столбца с истинными данными для меди и кадмия
+            removing_anomalies: Если true, то чистка от выбросов в данных
             nu: Скорость уменьшения ошибки
             n: Число деревьев для градиентного бустинга
         Returns:
@@ -110,7 +111,7 @@ class Train_Model(Normalization_Df):
         train_columns = ['P510_expense', 'Cu_AT501', 'Cd_AT501', 'Zn_AT501', 'temp', 'pH', 'auto_W503']
         df = df.copy(deep=True)
 
-        df, target_columns_cu_cd = self.clean_data(df, target_columns_cu_cd)
+        df, target_columns_cu_cd = self.clean_data(df, target_columns_cu_cd, removing_anomalies)
 
         model_pred = tree.DecisionTreeRegressor(criterion='friedman_mse',
                                                 max_features='auto',
@@ -154,35 +155,46 @@ class Train_Model(Normalization_Df):
             gradient_boosting: Если True, то применяется метод градиентного бустинга для предсказания
 
         Returns:
-            Модель, выдающая предсказание для Меди и Кадмия, либо None в случае её отсутствия
+            DataFrame, с предсказанием для Меди и Кадмия, либо None в случае отсутствия обученной модели
         """
         test_df = self.normalization(df=test_df, mean_or_median=True, test=False)
         test_df.reset_index(drop=True, inplace=True)
 
         if not gradient_boosting and self.model_Cu_Cd:
-            return self.model_Cu_Cd.predict(test_df)
+            test_predict = self.model_Cu_Cd.predict(test_df)
+            test_predict = pd.DataFrame(test_predict, columns=['Cu_AT502', 'Cd_AT502']).reset_index()
+
+            return pd.concat([test_df, test_predict[['Cu_AT502', 'Cd_AT502']]], axis=1)
 
         elif gradient_boosting and self.model_trees_grad_boosting:
-            test_pred = self.model_trees_grad_boosting[0].predict(test_df)
+            test_predict = self.model_trees_grad_boosting[0].predict(test_df)
             for i in self.model_trees_grad_boosting[1::]:
-                test_pred += nu * i.predict(test_df)
-            return test_pred
+                test_predict += nu * i.predict(test_df)
+
+            test_predict = pd.DataFrame(test_predict, columns=['Cu_AT502', 'Cd_AT502']).reset_index()
+            return pd.concat([test_df, test_predict[['Cu_AT502', 'Cd_AT502']]], axis=1)
 
         try:
             if not gradient_boosting:
                 self.redis_connection.exists('model_Cu_Cd')
                 self.model_Cu_Cd = pickle.loads(self.redis_connection.get('model_Cu_Cd'))
+                test_predict = self.model_Cu_Cd.predict(test_df)
+                test_predict = pd.DataFrame(test_predict, columns=['Cu_AT502', 'Cd_AT502']).reset_index()
 
-                return self.model_Cu_Cd.predict(test_df)
+                return pd.concat([test_df, test_predict[['Cu_AT502', 'Cd_AT502']]], axis=1)
+
             else:
                 self.redis_connection.exists('model_gradient_boost')
                 self.model_trees_grad_boosting = pickle.loads(self.redis_connection.get('model_gradient_boost'))
 
-                test_pred = self.model_trees_grad_boosting[0].predict(test_df)
+                test_predict = self.model_trees_grad_boosting[0].predict(test_df)
                 for i in self.model_trees_grad_boosting[1::]:
-                    test_pred += nu * i.predict(test_df)
+                    test_predict += nu * i.predict(test_df)
 
-                return test_pred
+                test_predict = pd.DataFrame(test_predict, columns=['Cu_AT502', 'Cd_AT502']).reset_index()
+
+                return pd.concat([test_df, test_predict[['Cu_AT502', 'Cd_AT502']]], axis=1)
+
         except redis.ConnectionError:
             print('Connection Redis ERROR')
             return None
