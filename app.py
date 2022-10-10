@@ -60,7 +60,7 @@ class User_Interface(tk.Frame):
         Returns:
             Без возвращаемого значения
         """
-        directory = fd.askdirectory(title="Открыть папку", initialdir=os.getcwd())
+        directory = fd.askdirectory(title="Open a folder", initialdir=os.getcwd())
         if directory:
             self.text_path_save_data.insert(0, directory)
 
@@ -90,13 +90,15 @@ class User_Interface(tk.Frame):
                                                  removing_anomalies=clean_data_check,
                                                  nu=0.1,
                                                  n=5)
-                self.score.insert(0, f'Обучение завершено, модель понимает данные на {train_model.score}%')
+                self.score.insert(0,
+                                  f'The training is completed, the model understands the data on {train_model.score}%')
 
             elif train_test_listbox == 'train':
                 train_model.train(df=df,
                                   target_columns_cu_cd=self.prepare_df.target_columns_Cu_Cd,
                                   removing_anomalies=clean_data_check)
-                self.score.insert(0, f'Обучение завершено, модель понимает данные на {train_model.score}%')
+                self.score.insert(0,
+                                  f'The training is completed, the model understands the data on {train_model.score}%')
 
             elif train_test_listbox == 'test':
                 if path_test_answer != '':
@@ -110,7 +112,7 @@ class User_Interface(tk.Frame):
 
     def initUI(self):
         self.window['bg'] = 'white'
-        self.window.title("Моделирование осаждения меди и кадмия в цинковом растворе")
+        self.window.title("Modeling of cuprum and cadmium deposition in zinc solution")
         self.window.geometry('500x235')
 
         line_frame = Frame(self.window)
@@ -118,7 +120,7 @@ class User_Interface(tk.Frame):
         line_frame.grid(row=0, column=0, columnspan=2)
 
         lbl_enter_data = Label(line_frame,
-                               text="Путь до файла с данными для предсказания:",
+                               text="The path to the data file for prediction:",
                                foreground="black",
                                background="white"
                                )
@@ -132,12 +134,12 @@ class User_Interface(tk.Frame):
 
         button_choose_file = Button(line_frame,
                                     background='white',
-                                    text="Выбор файла",
+                                    text="Choose file",
                                     command=self.choose_file)
         button_choose_file.grid(row=1, column=1, sticky=EW)
 
         lbl_train_or_test = Label(line_frame,
-                                  text="Тренировочные или тестовые данные",
+                                  text="Training or test data",
                                   foreground="black",
                                   background="white"
                                   )
@@ -157,7 +159,7 @@ class User_Interface(tk.Frame):
         gradient_boosting_check.grid(row=6, column=0, sticky=E)
 
         lbl_path_save_data = Label(line_frame,
-                                   text="Путь для сохранения выходных данных (если данные test)",
+                                   text="The path to save the output data (if the data is test)",
                                    foreground="black",
                                    background="white"
                                    )
@@ -171,13 +173,13 @@ class User_Interface(tk.Frame):
 
         button_choose_folder = Button(line_frame,
                                       background='white',
-                                      text="Выбор папки",
+                                      text="Choose folder",
                                       command=self.choose_directory)
         button_choose_folder.grid(row=5, column=1, sticky=EW)
 
         self.enabled_clean_data_check = BooleanVar()
         clean_data_check = tk.Checkbutton(line_frame,
-                                          text="Очистка данных от аномалий",
+                                          text="Clearing data from anomalies",
                                           variable=self.enabled_clean_data_check,
                                           bg='white')
         clean_data_check.grid(row=7, column=0, sticky=E)
