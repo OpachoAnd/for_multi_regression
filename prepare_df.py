@@ -178,7 +178,7 @@ class Prepare_Df(object):
             df = df.dropna(how='any', axis=0)
 
         self.target_columns_Cu_Cd = pd.concat([df[self.name_target_column_Cuprum].copy(deep=True),
-                                              df[self.name_target_column_Cadmium].copy(deep=True)],
+                                               df[self.name_target_column_Cadmium].copy(deep=True)],
                                               axis=1)
 
         df = df.drop(labels=['Cu_AT502', 'Cd_AT502', 'Zn_AT502'], axis=1)

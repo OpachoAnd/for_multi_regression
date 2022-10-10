@@ -35,6 +35,7 @@ class User_Interface(tk.Frame):
         self.text_path_save_data = None
         self.enabled_gradient_boosting_check = None
         self.enabled_clean_data_check = None
+        self.score = None
 
         self.initUI()
         self.window.mainloop()
@@ -89,11 +90,13 @@ class User_Interface(tk.Frame):
                                                  removing_anomalies=clean_data_check,
                                                  nu=0.1,
                                                  n=5)
+                self.score.insert(0, f'Обучение завершено, модель понимает данные на {train_model.score}%')
 
             elif train_test_listbox == 'train':
                 train_model.train(df=df,
                                   target_columns_cu_cd=self.prepare_df.target_columns_Cu_Cd,
                                   removing_anomalies=clean_data_check)
+                self.score.insert(0, f'Обучение завершено, модель понимает данные на {train_model.score}%')
 
             elif train_test_listbox == 'test':
                 if path_test_answer != '':
@@ -108,7 +111,7 @@ class User_Interface(tk.Frame):
     def initUI(self):
         self.window['bg'] = 'white'
         self.window.title("Моделирование осаждения меди и кадмия в цинковом растворе")
-        self.window.geometry('500x230')
+        self.window.geometry('500x235')
 
         line_frame = Frame(self.window)
         line_frame['bg'] = 'white'
@@ -179,11 +182,17 @@ class User_Interface(tk.Frame):
                                           bg='white')
         clean_data_check.grid(row=7, column=0, sticky=E)
 
+        self.score = Entry(line_frame,
+                           width=65,
+                           foreground="black",
+                           background="white")
+        self.score.grid(row=8, column=0)
+
         button_ok = Button(line_frame,
                            background='white',
                            text="Ок",
                            command=self.ok)
-        button_ok.grid(row=8, column=1, sticky=EW)
+        button_ok.grid(row=9, column=1, sticky=EW)
 
 
 if __name__ == '__main__':

@@ -17,6 +17,7 @@ class Train_Model(Normalization_Df):
 
         self.model_Cu_Cd = None
         self.model_trees_grad_boosting = []
+        self.score = None
 
     @private
     def clean_data(self, df: pd.DataFrame, target_columns_cu_cd: pd.DataFrame, removing_anomalies: bool):
@@ -81,8 +82,8 @@ class Train_Model(Normalization_Df):
             model_cu_cd.fit(train_df.loc[train], target_columns_cu_cd.loc[train])
             score = model_cu_cd.score(train_df.loc[test], target_columns_cu_cd.loc[test])
             trees[score] = model_cu_cd
-
-        self.model_Cu_Cd = trees[max(trees.keys())]
+        self.score = max(trees.keys())
+        self.model_Cu_Cd = trees[self.score]
 
         try:
             self.redis_connection.set('model_Cu_Cd', pickle.dumps(self.model_Cu_Cd))
