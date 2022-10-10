@@ -5,6 +5,7 @@ import pandas as pd
 import redis
 from accessify import protected
 from sklearn.cluster import DBSCAN
+import logging
 
 
 class Normalization_Df(object):
@@ -40,8 +41,7 @@ class Normalization_Df(object):
             self.redis_connection.set('offset', pickle.dumps(self.offset))
             self.redis_connection.set('std', pickle.dumps(self.std))
         except redis.ConnectionError:
-            # TODO ЗАМЕНИТЬ НА ЛОГИРОВАНИЕ
-            print('Connection Redis ERROR')
+            logging.warning('Redis connection ERROR')
 
     @protected
     def normalization(self, df: pd.DataFrame, mean_or_median: bool = True, test: bool = True):
@@ -65,8 +65,7 @@ class Normalization_Df(object):
             self.std = pickle.loads(self.redis_connection.get('std'))
 
         else:
-            # TODO обработка отсутствия значений в Редис
-            pass
+            logging.warning('OFFSET and STD not in Redis')
 
         # Нормализация
         df -= self.offset

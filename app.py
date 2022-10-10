@@ -1,3 +1,4 @@
+import logging
 import os
 import tkinter as tk
 import tkinter.filedialog as fd
@@ -10,6 +11,10 @@ from accessify import private, protected
 from prepare_df import Prepare_Df
 from settings import REDIS_CONNECTION
 from train_model import Train_Model
+
+logging.basicConfig(filename=os.path.join(os.getcwd(), 'info_app.log'),
+                    format=u'%(filename)s [LINE:%(lineno)d] #%(levelname)-8s [%(asctime)s]  %(message)s',
+                    level=logging.WARNING)
 
 
 class User_Interface(tk.Frame):
@@ -97,11 +102,9 @@ class User_Interface(tk.Frame):
                                                       gradient_boosting=gradient_boosting_check)
                     test_answer.to_excel(os.path.join(path_test_answer, 'test_answer.xlsx'))
                 else:
-                    #TODO логирование
-                    print('нет пути для сохранения')
+                    logging.warning('An empty path to saving predicted data')
         else:
-            # TODO логирование
-            print('пустые данные')
+            logging.warning('Empty data path')
 
     def initUI(self):
         self.window['bg'] = 'white'
@@ -146,9 +149,9 @@ class User_Interface(tk.Frame):
 
         self.enabled_gradient_boosting_check = BooleanVar()
         gradient_boosting_check = tk.Checkbutton(line_frame,
-                                                      text="Применить метод Gradient Boosting",
-                                                      variable=self.enabled_gradient_boosting_check,
-                                                      bg='white')
+                                                 text="Применить метод Gradient Boosting",
+                                                 variable=self.enabled_gradient_boosting_check,
+                                                 bg='white')
         gradient_boosting_check.grid(row=6, column=0, sticky=E)
 
         lbl_path_save_data = Label(line_frame,

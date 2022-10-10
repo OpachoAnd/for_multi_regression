@@ -1,3 +1,4 @@
+import logging
 import pickle
 
 import numpy as np
@@ -68,7 +69,7 @@ class Train_Model(Normalization_Df):
         """
         train_df, target_columns_cu_cd = self.clean_data(df, target_columns_cu_cd, removing_anomalies)
 
-        # Кросс-валидация:
+        # Cross-validation:
         trees = {}
         k_fold = KFold(n_splits=5, shuffle=True)
 
@@ -87,8 +88,7 @@ class Train_Model(Normalization_Df):
             self.redis_connection.set('model_Cu_Cd', pickle.dumps(self.model_Cu_Cd))
 
         except redis.ConnectionError:
-            # TODO ЗАМЕНИТЬ НА ЛОГИРОВАНИЕ
-            print('Connection Redis ERROR')
+            logging.warning('Redis connection ERROR')
 
     def train_gradient_boost(self,
                              df: pd.DataFrame,
@@ -143,8 +143,7 @@ class Train_Model(Normalization_Df):
         try:
             self.redis_connection.set('model_gradient_boost', pickle.dumps(self.model_trees_grad_boosting))
         except redis.ConnectionError:
-            # TODO ЗАМЕНИТЬ НА ЛОГИРОВАНИЕ
-            print('Connection Redis ERROR')
+            logging.warning('Redis connection ERROR')
 
     def predict(self, test_df: pd.DataFrame, gradient_boosting: bool = False, nu: float = 0.1):
         """
@@ -196,5 +195,5 @@ class Train_Model(Normalization_Df):
                 return pd.concat([test_df, test_predict[['Cu_AT502', 'Cd_AT502']]], axis=1)
 
         except redis.ConnectionError:
-            print('Connection Redis ERROR')
+            logging.warning('Redis connection error')
             return None

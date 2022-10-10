@@ -17,7 +17,7 @@ class Prepare_Df(object):
         self.target_column_Cuprum = None
         self.target_column_Cadmium = None
 
-    def deleting_incorrect_data_1(self, df: pd.DataFrame, test: bool = True) -> pd.DataFrame:
+    def deleting_incorrect_data(self, df: pd.DataFrame, test: bool = True) -> pd.DataFrame:
         """
         Метод для удаления некорректных данных
         Args:
@@ -177,8 +177,6 @@ class Prepare_Df(object):
             # Если набор данных ТРЕНИРОВОЧНЫЙ, то удаляем строки с пустыми столбцами
             df = df.dropna(how='any', axis=0)
 
-        # self.target_column_Cuprum = df[self.name_target_column_Cuprum].copy(deep=True)  # 'Cu_AT502']
-        # self.target_column_Cadmium = df[self.name_target_column_Cadmium].copy(deep=True)
         self.target_columns_Cu_Cd = pd.concat([df[self.name_target_column_Cuprum].copy(deep=True),
                                               df[self.name_target_column_Cadmium].copy(deep=True)],
                                               axis=1)
